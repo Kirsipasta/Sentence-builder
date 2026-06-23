@@ -1,0 +1,1065 @@
+﻿<!DOCTYPE html>
+<html lang="et">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SõnaSõber - Estonian Sentence Master</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-game { font-family: 'Fredoka', sans-serif; }
+        .word-chip { touch-action: none; user-select: none; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+        .word-chip:active { transform: scale(1.02); }
+        .custom-scroll { overflow-y: auto !important; scrollbar-width: thin; }
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-slate-50 lg:h-screen lg:overflow-hidden flex flex-col selection:bg-sky-200">
+
+    <!-- PAGE WRAPPER -->
+    <div class="flex-grow flex flex-col w-full h-full max-w-6xl mx-auto px-4 py-4 md:py-6 overflow-hidden gap-4">
+        
+        <!-- HEADER (AutoCAD Style Compact) -->
+        <header class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="flex flex-col w-12 h-8 rounded overflow-hidden shadow-sm border border-slate-200 shrink-0">
+                    <div class="bg-[#0072C6] h-1/3"></div><div class="bg-black h-1/3"></div><div class="bg-white h-1/3"></div>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-game font-bold text-slate-800">SõnaSõber</h1>
+                    <p class="text-xs text-slate-500">AutoCAD-Style Top Ribbon Workspace</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <button id="btn-cheat" class="p-2 py-1.5 rounded-lg border border-sky-200 bg-sky-50 text-sky-700 text-xs font-semibold"><i class="fas fa-book-open mr-2"></i>Case Secrets</button>
+                <div class="flex items-center gap-2 bg-slate-100 px-3 py-1 rounded-lg border border-slate-200/60">
+                    <div class="flex items-center gap-1.5 text-amber-500 font-bold text-xs"><i class="fas fa-fire"></i><span id="stat-streak" class="text-slate-700">0</span></div>
+                    <div class="h-4 w-[1px] bg-slate-300 mx-0.5"></div>
+                    <div class="flex items-center gap-1.5 text-emerald-500 font-bold text-xs"><i class="fas fa-star"></i><span id="stat-score" class="text-slate-700">0</span></div>
+                </div>
+            </div>
+        </header>
+
+        <div id="cheat-sheet-modal" class="hidden bg-gradient-to-r from-sky-500 to-[#0072C6] rounded-xl p-4 text-white shadow-md relative shrink-0">
+            <button id="btn-close-cheat" class="absolute top-2.5 right-2.5 bg-black/10 p-2 rounded-full w-7 h-7 flex items-center justify-center"><i class="fas fa-times"></i></button>
+            <h3 class="font-game text-lg font-bold mb-1">Estonian Case Guide</h3>
+            <p class="text-xs">Click "Forms" on any noun card in the Ribbon above to expand the cases before dragging them.</p>
+        </div>
+
+        <!-- TOP RIBBON: Word Bank Control Deck (AutoCAD Style) -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col p-4 shrink-0 gap-3">
+            <!-- Ribbon Tool Deck Controls -->
+            <div class="flex flex-col md:flex-row items-center justify-between gap-3 border-b pb-3 shrink-0">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-atlas text-[#0072C6]"></i>
+                    <h3 class="font-game text-sm font-bold text-slate-800">Sõnakogu Ribbon</h3>
+                </div>
+                
+                <div class="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
+                    <input type="text" id="word-search" placeholder="Search dictionary..." class="pl-3 pr-3 py-1.5 bg-slate-100 border border-slate-200 rounded-lg text-xs outline-none w-full sm:w-44">
+                    <div class="flex bg-slate-100 p-0.5 rounded-lg text-[10px] font-bold w-full sm:w-auto">
+                        <button class="tab-btn flex-1 py-1 px-3 rounded-md bg-white shadow-sm text-slate-800" data-tab="all">All</button>
+                        <button class="tab-btn flex-1 py-1 px-3 rounded-md text-slate-500" data-tab="subject">Pronoun</button>
+                        <button class="tab-btn flex-1 py-1 px-3 rounded-md text-slate-500" data-tab="verb">Verb</button>
+                        <button class="tab-btn flex-1 py-1 px-3 rounded-md text-slate-500" data-tab="object">Nouns</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Ribbon Items Bank (With internal scroll boundary) -->
+            <div class="max-h-[150px] lg:max-h-[220px] overflow-y-auto custom-scroll bg-slate-50/50 p-2 rounded-xl border border-slate-100">
+                <div id="word-pool" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"></div>
+            </div>
+        </div>
+
+        <!-- BOTTOM WORKSPACE: Centered playground staging canvas (Flex-grow) -->
+        <div class="flex-grow flex flex-col gap-4 overflow-y-auto custom-scroll pr-1 justify-center py-2 min-h-[300px]">
+            
+            <div class="max-w-3xl w-full mx-auto flex flex-col gap-4">
+                <div class="bg-white p-1 rounded-xl shadow-sm border border-slate-100 flex shrink-0">
+                    <button id="mode-explorer" class="flex-1 py-2 rounded-lg font-semibold text-sm bg-slate-900 text-white">Magic Explorer</button>
+                    <button id="mode-quest" class="flex-1 py-2 rounded-lg font-semibold text-sm text-slate-600">Sentence Quests</button>
+                </div>
+
+                <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-100 shrink-0">
+                    <div class="grid grid-cols-3 gap-2">
+                        <button id="pattern-statement" class="pattern-btn p-2 rounded-lg border text-xs font-bold bg-[#0072C6]/10 border-[#0072C6] text-[#0072C6]">Affirmative</button>
+                        <button id="pattern-negation" class="pattern-btn p-2 rounded-lg border text-xs font-bold border-slate-200">Negation</button>
+                        <button id="pattern-question" class="pattern-btn p-2 rounded-lg border text-xs font-bold border-slate-200">Question</button>
+                    </div>
+                </div>
+
+                <div id="quest-container" class="hidden bg-indigo-600 rounded-xl p-4 text-white shadow-md shrink-0">
+                    <h2 id="quest-prompt" class="font-game text-lg font-bold">Translate...</h2>
+                </div>
+
+                <!-- Sentence Stage canvas -->
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100/80 flex flex-col gap-5 shrink-0">
+                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex justify-between items-center">
+                        <span>Sentence Canvas (Dropzones)</span>
+                        <span id="structure-indicator" class="text-sky-600 font-semibold">Affirmative (SVO)</span>
+                    </div>
+                    
+                    <!-- Dynamic Grid structure (Affirmative/Negative/Question formats) -->
+                    <div id="dropzone-grid" class="flex flex-wrap items-center justify-center gap-3 py-2"></div>
+                    
+                    <div class="pt-4 border-t border-slate-100 flex flex-col gap-3">
+                        <div id="sentence-translation" class="text-base font-bold text-slate-700 italic text-center py-1">"Select words..."</div>
+                        
+                        <div class="flex gap-2 w-full justify-center">
+                            <button id="btn-clear" class="flex-1 py-2 border border-slate-200 rounded-lg text-sm font-semibold hover:bg-slate-50 transition-all">Reset</button>
+                            <button id="btn-check" class="hidden flex-1 py-2 bg-emerald-500 text-white rounded-lg text-sm font-bold shadow-md hover:bg-emerald-600 transition-all">Check Work</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feedbacks panel -->
+                <div class="bg-slate-900 text-white rounded-2xl p-4 shadow-lg flex items-center gap-3 shrink-0">
+                    <div class="text-sky-400 text-lg"><i class="fas fa-comment-dots"></i></div>
+                    <p id="sini-text" class="text-xs font-medium leading-relaxed">Tere! Drag items down from the Ribbon or tap them to auto-fill placeholders.</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SUCCESS MODAL -->
+    <div id="quest-success-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl">
+            <h3 class="font-game text-2xl font-bold text-slate-800 mb-2">Väga hea!</h3>
+            <p class="text-sm text-slate-500">Sentence solved correctly.</p>
+            <button id="btn-next-quest" class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 transition-all text-white font-bold rounded-xl mt-4">Continue</button>
+        </div>
+    </div>
+
+    <script>
+        const ESTONIAN_DATABASE_EMBEDDED = {
+          "verbs": {
+            "olema": { "translation": "to be", "stem": "ole", "mina": "olen", "sina": "oled", "tema": "on", "neg": "ole", "da_inf": "olla" },
+            "tegema": { "translation": "to do", "stem": "tee", "mina": "teen", "sina": "teed", "tema": "teeb", "neg": "tee", "da_inf": "teha" },
+            "minema": { "translation": "to go", "stem": "lähe", "mina": "lähen", "sina": "lähed", "tema": "läheb", "neg": "lähe", "da_inf": "minna" },
+            "tulema": { "translation": "to come", "stem": "tule", "mina": "tulen", "sina": "tuled", "tema": "tuleb", "neg": "tule", "da_inf": "tulla" },
+            "saama": { "translation": "to get", "stem": "saa", "mina": "saan", "sina": "saad", "tema": "saab", "neg": "saa", "da_inf": "saada" },
+            "rääkima": { "translation": "to speak", "stem": "räägi", "mina": "räägin", "sina": "räägid", "tema": "räägib", "neg": "räägi", "da_inf": "rääkida" },
+            "õppima": { "translation": "to learn", "stem": "õpi", "mina": "õpin", "sina": "õpid", "tema": "õpib", "neg": "õpi", "da_inf": "õppida" },
+            "sööma": { "translation": "to eat", "stem": "söö", "mina": "söön", "sina": "sööd", "tema": "sööb", "neg": "söö", "da_inf": "süüa" },
+            "jooma": { "translation": "to drink", "stem": "joo", "mina": "joon", "sina": "jood", "tema": "joob", "neg": "joo", "da_inf": "juua" },
+            "armastama": { "translation": "to love", "stem": "armasta", "mina": "armastan", "sina": "armastad", "tema": "armastab", "neg": "armasta", "da_inf": "armastada" },
+            "lugema": { "translation": "to read", "stem": "loe", "mina": "loen", "sina": "loed", "tema": "loeb", "neg": "loe" },
+            "kirjutama": { "translation": "to write", "stem": "kirjuta", "mina": "kirjutan", "sina": "kirjutad", "tema": "kirjutab", "neg": "kirjuta" },
+            "nägema": { "translation": "to see", "stem": "näe", "mina": "näen", "sina": "näed", "tema": "näeb", "neg": "näe", "da_inf": "näha" },
+            "kuulma": { "translation": "to hear", "stem": "kuule", "mina": "kuulen", "sina": "kuuled", "tema": "kuuleb", "neg": "kuule" },
+            "andma": { "translation": "to give", "stem": "anna", "mina": "annan", "sina": "annad", "tema": "annab", "neg": "anna" },
+            "võtma": { "translation": "to take", "stem": "votta", "mina": "võtan", "sina": "võtad", "tema": "võtab", "neg": "võta" },
+            "jooksma": { "translation": "to run", "stem": "jookse", "mina": "jooksen", "sina": "jooksed", "tema": "jookseb", "neg": "jookse" },
+            "magama": { "translation": "to sleep", "stem": "maga", "mina": "magan", "sina": "magad", "tema": "magab", "neg": "maga" },
+            "ostma": { "translation": "to buy", "stem": "osta", "mina": "ostan", "sina": "ostad", "tema": "ostab", "neg": "osta" },
+            "müüma": { "translation": "to sell", "stem": "müü", "mina": "müün", "sina": "müüd", "tema": "müüb", "neg": "müü" },
+            "tahtma": { "translation": "to want", "stem": "taha", "mina": "tahan", "sina": "tahad", "tema": "tahab", "neg": "taha" },
+            "teadma": { "translation": "to know", "stem": "tea", "mina": "tean", "sina": "tead", "tema": "teab", "neg": "tea" },
+            "tundma": { "translation": "to feel", "stem": "tunne", "mina": "tunnen", "sina": "tunned", "tema": "tunneb", "neg": "tunne" },
+            "aitama": { "translation": "to help", "stem": "aita", "mina": "aitan", "sina": "aitad", "tema": "aitab", "neg": "aita" },
+            "saatma": { "translation": "to send", "stem": "saada", "mina": "saadan", "sina": "saadad", "tema": "saadab", "neg": "saada" },
+            "ujuma": { "translation": "to swim", "stem": "uju", "mina": "ujun", "sina": "ujud", "tema": "ujub", "neg": "uju" },
+            "laulma": { "translation": "to sing", "stem": "laula", "mina": "laulan", "sina": "laulad", "tema": "laulab", "neg": "laula" },
+            "tantsima": { "translation": "to dance", "stem": "tantsi", "mina": "tantsin", "sina": "tantsid", "tema": "tantsib", "neg": "tantsi" },
+            "ootama": { "translation": "to wait", "stem": "oota", "mina": "ootan", "sina": "ootad", "tema": "ootab", "neg": "oota" },
+            "mõtlema": { "translation": "to think", "stem": "mõtle", "mina": "mõtlen", "sina": "mõtled", "tema": "mõtleb", "neg": "mõtle" },
+            "ütlema": { "translation": "to say", "stem": "ütle", "mina": "ütlen", "sina": "ütled", "tema": "ütleb", "neg": "ütle" },
+            "leidma": { "translation": "to find", "stem": "leia", "mina": "leian", "sina": "leiad", "tema": "leiab", "neg": "leia" },
+            "panema": { "translation": "to put", "stem": "pane", "mina": "panen", "sina": "paned", "tema": "paneb", "neg": "pane" },
+            "elama": { "translation": "to live", "stem": "ela", "mina": "elan", "sina": "elad", "tema": "elab", "neg": "ela" },
+            "töötama": { "translation": "to work", "stem": "tööta", "mina": "töötan", "sina": "töötad", "tema": "töötab", "neg": "tööta" },
+            "puhkama": { "translation": "to rest", "stem": "puhka", "mina": "puhkan", "sina": "puhkad", "tema": "puhkab", "neg": "puhka" },
+            "küsima": { "translation": "to ask", "stem": "küsi", "mina": "küsin", "sina": "küsid", "tema": "küsib", "neg": "küsi" },
+            "vastama": { "translation": "to answer", "stem": "vasta", "mina": "vastan", "sina": "vastad", "tema": "vastab", "neg": "vasta" },
+            "kutsuma": { "translation": "to invite", "stem": "kutsu", "mina": "kutsun", "sina": "kutsud", "tema": "kutsub", "neg": "kutsu" },
+            "tooma": { "translation": "to bring", "stem": "too", "mina": "toon", "sina": "tood", "tema": "toob", "neg": "too" },
+            "viima": { "translation": "to take", "stem": "vii", "mina": "viin", "sina": "viid", "tema": "viib", "neg": "vii" },
+            "jääma": { "translation": "to stay", "stem": "jää", "mina": "jään", "sina": "jääd", "tema": "jääb", "neg": "jää" },
+            "hakkama": { "translation": "to begin", "stem": "hakka", "mina": "hakkan", "sina": "hakkad", "tema": "hakkab", "neg": "hakka" },
+            "lõpetama": { "translation": "to finish", "stem": "lõpeta", "mina": "lõpetan", "sina": "lõpetad", "tema": "lõpetab", "neg": "lõpeta" },
+            "uskuma": { "translation": "to believe", "stem": "usu", "mina": "usun", "sina": "usud", "tema": "usub", "neg": "usu" },
+            "lootma": { "translation": "to hope", "stem": "looda", "mina": "loodan", "sina": "loodad", "tema": "loodab", "neg": "looda" },
+            "kartma": { "translation": "to fear", "stem": "karda", "mina": "kardan", "sina": "kardad", "tema": "kardab", "neg": "karda" },
+            "nautima": { "translation": "to enjoy", "stem": "naudi", "mina": "naudin", "sina": "naudid", "tema": "naudib", "neg": "naudi" },
+            "mängima": { "translation": "to play", "stem": "mängi", "mina": "mängin", "sina": "mängid", "tema": "mängib", "neg": "mängi" },
+            "kuulama": { "translation": "to listen", "stem": "kuula", "mina": "kuulan", "sina": "kuulad", "tema": "kuulab", "neg": "kuula" },
+            "vaatama": { "translation": "to watch", "stem": "vaata", "mina": "vaatan", "sina": "vaatad", "tema": "vaatab", "neg": "vaata" },
+            "sõitma": { "translation": "to drive", "stem": "sõida", "mina": "sõidan", "sina": "sõidad", "tema": "sõidab", "neg": "sõida" },
+            "lendama": { "translation": "to fly", "stem": "lenda", "mina": "lendan", "sina": "lendad", "tema": "lendab", "neg": "lendab" },
+            "seisma": { "translation": "to stand", "stem": "seisa", "mina": "seisan", "sina": "seisad", "tema": "seisab", "neg": "seisa" },
+            "istuma": { "translation": "to sit", "stem": "istu", "mina": "istun", "sina": "istud", "tema": "istub", "neg": "istu" },
+            "unustama": { "translation": "to forget", "stem": "unusta", "mina": "unustan", "sina": "unustad", "tema": "unustab", "neg": "unusta" },
+            "mäletama": { "translation": "to remember", "stem": "mäleta", "mina": "mäletan", "sina": "mäletad", "tema": "mäletab", "neg": "mäleta" },
+            "oskama": { "translation": "to know how", "stem": "oska", "mina": "oskan", "sina": "oskad", "tema": "oskab", "neg": "oska" },
+            "pakkuma": { "translation": "to offer", "stem": "paku", "mina": "pakun", "sina": "pakud", "tema": "pakub", "neg": "paku" },
+            "proovima": { "translation": "to try", "stem": "proovi", "mina": "proovin", "sina": "proovid", "tema": "proovib", "neg": "proovi" },
+            "valima": { "translation": "to choose", "stem": "vali", "mina": "valin", "sina": "valid", "tema": "valib", "neg": "vali" },
+            "võitma": { "translation": "to win", "stem": "võida", "mina": "võidan", "sina": "võidad", "tema": "võidab", "neg": "võida" },
+            "kaotama": { "translation": "to lose", "stem": "kaota", "mina": "kaotan", "sina": "kaotad", "tema": "kaotab", "neg": "kaota" },
+            "märkama": { "translation": "to notice", "stem": "märka", "mina": "märkan", "sina": "märkad", "tema": "märkab", "neg": "märka" },
+            "muutuma": { "translation": "to change", "stem": "muutu", "mina": "muutun", "sina": "muutud", "tema": "muutub", "neg": "muutu" },
+            "näitama": { "translation": "to show", "stem": "näita", "mina": "näitan", "sina": "näitad", "tema": "näitab", "neg": "näita" },
+            "püüdma": { "translation": "to catch", "stem": "püüa", "mina": "püüan", "sina": "püüad", "tema": "püüab", "neg": "püüa" },
+            "saavutama": { "translation": "to achieve", "stem": "saavuta", "mina": "saavutan", "sina": "saavutad", "tema": "saavutab", "neg": "saavuta" },
+            "soovima": { "translation": "to wish", "stem": "soovi", "mina": "soovin", "sina": "soovid", "tema": "soovib", "neg": "soovi" },
+            "toetama": { "translation": "to support", "stem": "toeta", "mina": "toetan", "sina": "toetad", "tema": "toetab", "neg": "toeta" },
+            "segama": { "translation": "to disturb", "stem": "sega", "mina": "segan", "sina": "segad", "tema": "segab", "neg": "sega" },
+            "seletama": { "translation": "to explain", "stem": "seleta", "mina": "seletan", "sina": "seletad", "tema": "seletab", "neg": "seleta" },
+            "suudlema": { "translation": "to kiss", "stem": "suudle", "mina": "suudlen", "sina": "suudled", "tema": "suudleb", "neg": "suudle" },
+            "tõusma": { "translation": "to rise", "stem": "tõuse", "mina": "tõusen", "sina": "tõused", "tema": "tõuseb", "neg": "tõuse" },
+            "kukkuma": { "translation": "to fall", "stem": "kuku", "mina": "kukun", "sina": "kukud", "tema": "kukub", "neg": "kuku" },
+            "tekkima": { "translation": "to arise", "stem": "teki", "mina": "tekin", "sina": "tekid", "tema": "tekib", "neg": "teki" },
+            "pakkima": { "translation": "to pack", "stem": "paki", "mina": "pakin", "sina": "pakid", "tema": "pakib", "neg": "paki" },
+            "reisima": { "translation": "to travel", "stem": "reisi", "mina": "reisin", "sina": "reisid", "tema": "reisib", "neg": "reisi" },
+            "broneerima": { "translation": "to book", "stem": "broneeri", "mina": "broneerin", "sina": "broneerid", "tema": "broneerib", "neg": "broneeri" },
+            "maksma": { "translation": "to pay", "stem": "maksa", "mina": "maksan", "sina": "maksad", "tema": "maksab", "neg": "maksa" },
+            "helistama": { "translation": "to call", "stem": "helista", "mina": "helistan", "sina": "helistad", "tema": "helistab", "neg": "helista" },
+            "joonistama": { "translation": "to draw", "stem": "joonista", "mina": "joonistan", "sina": "joonistad", "tema": "joonistab", "neg": "joonista" },
+            "naerma": { "translation": "to laugh", "stem": "naera", "mina": "naeran", "sina": "naerad", "tema": "naerab", "neg": "naera" },
+            "nutma": { "translation": "to cry", "stem": "nuta", "mina": "nutan", "sina": "nutad", "tema": "nutab", "neg": "nuta" },
+            "igatsema": { "translation": "to long for", "stem": "igatse", "mina": "igatsen", "sina": "igatsed", "tema": "igatseb", "neg": "igatse" },
+            "kohtuma": { "translation": "to meet", "stem": "kohtu", "mina": "kohtun", "sina": "kohtud", "tema": "kohtub", "neg": "kohtu" },
+            "tutvuma": { "translation": "to get acquainted", "stem": "tutvu", "mina": "tutvun", "sina": "tutvud", "tema": "tutvub", "neg": "tutvu" },
+            "abielluma": { "translation": "to marry", "stem": "abiellu", "mina": "abiellun", "sina": "abiellud", "tema": "abiellub", "neg": "abiellu" },
+            "lahutama": { "translation": "to divorce", "stem": "lahuta", "mina": "lahutan", "sina": "lahutad", "tema": "lahutab", "neg": "lahuta" },
+            "sündima": { "translation": "to be born", "stem": "sünni", "mina": "sünnin", "sina": "sünnid", "tema": "sünnib", "neg": "sünni" },
+            "surema": { "translation": "to die", "stem": "sure", "mina": "suren", "sina": "sured", "tema": "sureb", "neg": "sure" },
+            "peitma": { "translation": "to hide", "stem": "peida", "mina": "peidan", "sina": "peidad", "tema": "peidab", "neg": "peida" },
+            "harjutama": { "translation": "to practice", "stem": "harjuta", "mina": "harjutan", "sina": "harjutad", "tema": "harjutab", "neg": "harjuta" },
+            "looma": { "translation": "to create", "stem": "loo", "mina": "loon", "sina": "lood", "tema": "loob", "neg": "loo" },
+            "arvama": { "translation": "to think", "stem": "arva", "mina": "arvan", "sina": "arvad", "tema": "arvab", "neg": "arva" },
+            "lubama": { "translation": "to allow", "stem": "luba", "mina": "luban", "sina": "lubad", "tema": "lubab", "neg": "luba" },
+            "keelama": { "translation": "to forbid", "stem": "keela", "mina": "keelan", "sina": "keelad", "tema": "keelab", "neg": "keela" },
+            "pesema": { "translation": "to wash", "stem": "pese", "mina": "pesen", "sina": "pesed", "tema": "peseb", "neg": "pese" },
+            "koristama": { "translation": "to clean", "stem": "korista", "mina": "koristan", "sina": "koristad", "tema": "koristab", "neg": "korista" },
+            "süütama": { "translation": "to light", "stem": "süüta", "mina": "süütan", "sina": "süütad", "tema": "süütab", "neg": "süüta" },
+            "kustutama": { "translation": "to delete", "stem": "kustuta", "mina": "kustutan", "sina": "kustutad", "tema": "kustutab", "neg": "kustuta" }
+          },
+          "objects": {
+            "auto": {
+              "translation": "car",
+              "singular": { "nominative": "auto", "genitive": "auto", "partitive": "autot", "illative": "autosse", "inessive": "autos", "elative": "autost", "allative": "autole", "adessive": "autol", "ablative": "autolt", "translative": "autoks", "terminative": "autoni", "essive": "autona", "abessive": "autota", "comitative": "autoga" },
+              "plural": { "nominative": "autod", "genitive": "autode", "partitive": "autosid", "illative": "autodesse", "inessive": "autodes", "elative": "autodest", "allative": "autodele", "adessive": "autodel", "ablative": "autodelt", "translative": "autodeks", "terminative": "autodeni", "essive": "autodena", "abessive": "autodeta", "comitative": "autodega" }
+            },
+            "raamat": {
+              "translation": "book",
+              "singular": { "nominative": "raamat", "genitive": "raamatu", "partitive": "raamatut", "illative": "raamatusse", "inessive": "raamatus", "elative": "raamatust", "allative": "raamatule", "adessive": "raamatul", "ablative": "raamatult", "translative": "raamatuks", "terminative": "raamatuni", "essive": "raamatuna", "abessive": "raamatuta", "comitative": "raamatuga" },
+              "plural": { "nominative": "raamatud", "genitive": "raamatute", "partitive": "raamatuid", "illative": "raamatutesse", "inessive": "raamatutes", "elative": "raamatutest", "allative": "raamatutele", "adessive": "raamatutel", "ablative": "raamatutelt", "translative": "raamatuteks", "terminative": "raamatuteni", "essive": "raamatutena", "abessive": "raamatuteta", "comitative": "raamatutega" }
+            },
+            "maja": {
+              "translation": "house",
+              "singular": { "nominative": "maja", "genitive": "maja", "partitive": "maja", "illative": "majasse", "inessive": "majas", "elative": "majast", "allative": "majale", "adessive": "majal", "ablative": "majalt", "translative": "majaks", "terminative": "majeni", "essive": "majana", "abessive": "majata", "comitative": "majaga" },
+              "plural": { "nominative": "majad", "genitive": "majade", "partitive": "majasid", "illative": "majadesse", "inessive": "majades", "elative": "majadest", "allative": "majadele", "adessive": "majadel", "ablative": "majadelt", "translative": "majadeks", "terminative": "majadedeni", "essive": "majadedena", "abessive": "majadedeta", "comitative": "majadedega" }
+            },
+            "linn": {
+              "translation": "city",
+              "singular": { "nominative": "linn", "genitive": "linna", "partitive": "linna", "illative": "linna", "inessive": "linnas", "elative": "linnast", "allative": "linnale", "adessive": "linnal", "ablative": "linnalt", "translative": "linnaks", "terminative": "linnani", "essive": "linnana", "abessive": "linnata", "comitative": "linnaga" },
+              "plural": { "nominative": "linnad", "genitive": "linnade", "partitive": "linnu", "illative": "linnadesse", "inessive": "linnades", "elative": "linnadest", "allative": "linnadele", "adessive": "linnadel", "ablative": "linnadelt", "translative": "linnadeks", "terminative": "linnadeni", "essive": "linnadena", "abessive": "linnadeta", "comitative": "linnadega" }
+            },
+            "vesi": {
+              "translation": "water",
+              "singular": { "nominative": "vesi", "genitive": "vee", "partitive": "vett", "illative": "vette", "inessive": "vees", "elative": "veest", "allative": "veele", "adessive": "veel", "ablative": "veelt", "translative": "veeks", "terminative": "veeni", "essive": "veena", "abessive": "veeta", "comitative": "veega" },
+              "plural": { "nominative": "veed", "genitive": "vete", "partitive": "vesi", "illative": "vetesse", "inessive": "vetes", "elative": "vetest", "allative": "vetele", "adessive": "vetel", "ablative": "vetelt", "translative": "veteks", "terminative": "veteni", "essive": "vetena", "abessive": "veteta", "comitative": "vetega" }
+            },
+            "leib": {
+              "translation": "bread",
+              "singular": { "nominative": "leib", "genitive": "leiva", "partitive": "leiba", "illative": "leivasse", "inessive": "leivas", "elative": "leivast", "allative": "leivale", "adessive": "leival", "ablative": "leivalt", "translative": "leivaks", "terminative": "leivani", "essive": "leivana", "abessive": "leivata", "comitative": "leivaga" },
+              "plural": { "nominative": "leivad", "genitive": "leibade", "partitive": "leibu", "illative": "leibadesse", "inessive": "leibades", "elative": "leibadest", "allative": "leibadele", "adessive": "leibadel", "ablative": "leibadelt", "translative": "leibadeks", "terminative": "leibadeni", "essive": "leibadena", "abessive": "leibadeta", "comitative": "leibadega" }
+            },
+            "kool": {
+              "translation": "school",
+              "singular": { "nominative": "kool", "genitive": "kooli", "partitive": "kooli", "illative": "kooli", "inessive": "koolis", "elative": "koolist", "allative": "koolile", "adessive": "koolil", "ablative": "koolilt", "translative": "kooliks", "terminative": "koolini", "essive": "koolina", "abessive": "koolita", "comitative": "kooliga" },
+              "plural": { "nominative": "koolid", "genitive": "koolide", "partitive": "koole", "illative": "koolidesse", "inessive": "koolides", "elative": "koolidest", "allative": "koolidele", "adessive": "koolidel", "ablative": "koolidelt", "translative": "koolideks", "terminative": "koolideni", "essive": "koolidena", "abessive": "koolideta", "comitative": "koolidega" }
+            },
+            "laps": {
+              "translation": "child",
+              "singular": { "nominative": "laps", "genitive": "lapse", "partitive": "last", "illative": "lapsesse", "inessive": "lapses", "elative": "lapsest", "allative": "lapsele", "adessive": "lapsel", "ablative": "lapselt", "translative": "lapseks", "terminative": "lapseni", "essive": "lapsena", "abessive": "lapseta", "comitative": "lapsega" },
+              "plural": { "nominative": "lapsed", "genitive": "laste", "partitive": "lapsi", "illative": "lastesse", "inessive": "lastes", "elative": "lastest", "allative": "lastele", "adessive": "lastel", "ablative": "lastelt", "translative": "lasteks", "terminative": "lasteni", "essive": "lastena", "abessive": "lasteta", "comitative": "lastega" }
+            },
+            "pitsa": {
+              "translation": "pizza",
+              "singular": { "nominative": "pitsa", "genitive": "pitsa", "partitive": "pitsat", "illative": "pitsasse", "inessive": "pitsas", "elative": "pitsast", "allative": "pitsale", "adessive": "pitsal", "ablative": "pitsalt", "translative": "pitsaks", "terminative": "pitsani", "essive": "pitsana", "abessive": "pitsata", "comitative": "pitsaga" },
+              "plural": { "nominative": "pitsad", "genitive": "pitsade", "partitive": "pitsasid", "illative": "pitsadesse", "inessive": "pitsades", "elative": "pitsadest", "allative": "pitsadele", "adessive": "pitsadel", "ablative": "pitsadelt", "translative": "pitsadeks", "terminative": "pitsadeni", "essive": "pitsadena", "abessive": "pitsadeta", "comitative": "pitsadega" }
+            },
+            "keel": {
+              "translation": "language",
+              "singular": { "nominative": "keel", "genitive": "keele", "partitive": "keelt", "illative": "keelde", "inessive": "keeles", "elative": "keelest", "allative": "keelele", "adessive": "keelel", "ablative": "keelelt", "translative": "keeleks", "terminative": "keeleni", "essive": "keelena", "abessive": "keeleta", "comitative": "keelega" },
+              "plural": { "nominative": "keeled", "genitive": "keelte", "partitive": "keeli", "illative": "keeltesse", "inessive": "keeltes", "elative": "keeltest", "allative": "keeltele", "adessive": "keeltel", "ablative": "keeltelt", "translative": "keelteks", "terminative": "keelteni", "essive": "keeltena", "abessive": "keelteta", "comitative": "keeltega" }
+            },
+            "koer": {
+              "translation": "dog",
+              "singular": { "nominative": "koer", "genitive": "koera", "partitive": "koera", "illative": "koerasse", "inessive": "koeras", "elative": "koerast", "allative": "koerale", "adessive": "koeral", "ablative": "koeralt", "translative": "koeraks", "terminative": "koerani", "essive": "koerana", "abessive": "koerata", "comitative": "koeraga" },
+              "plural": { "nominative": "koerad", "genitive": "koerte", "partitive": "koeri", "illative": "koertesse", "inessive": "koertes", "elative": "koertest", "allative": "koertele", "adessive": "koertel", "ablative": "koertelt", "translative": "koerteks", "terminative": "koerteni", "essive": "koertena", "abessive": "koerteta", "comitative": "koertega" }
+            },
+            "kass": {
+              "translation": "cat",
+              "singular": { "nominative": "kass", "genitive": "kassi", "partitive": "kassi", "illative": "kassisse", "inessive": "kassis", "elative": "kassist", "allative": "kassile", "adessive": "kassil", "ablative": "kassilt", "translative": "kassiks", "terminative": "kassini", "essive": "kassina", "abessive": "kassita", "comitative": "kassiga" },
+              "plural": { "nominative": "kassid", "genitive": "kasside", "partitive": "kasse", "illative": "kassidesse", "inessive": "kassides", "elative": "kassidest", "allative": "kassidele", "adessive": "kassidel", "ablative": "kassidelt", "translative": "kassideks", "terminative": "kassideni", "essive": "kassidena", "abessive": "kassideta", "comitative": "kassidega" }
+            },
+            "mees": {
+              "translation": "man",
+              "singular": { "nominative": "mees", "genitive": "mehe", "partitive": "meest", "illative": "mehesse", "inessive": "mehes", "elative": "mehest", "allative": "mehele", "adessive": "mehel", "ablative": "mehelt", "translative": "meheks", "terminative": "meheni", "essive": "mehena", "abessive": "meheta", "comitative": "mehega" },
+              "plural": { "nominative": "mehed", "genitive": "meeste", "partitive": "mehi", "illative": "meestesse", "inessive": "meestes", "elative": "meestest", "allative": "meestele", "adessive": "meestel", "ablative": "meestelt", "translative": "meesteks", "terminative": "meesteni", "essive": "meestena", "abessive": "meesteta", "comitative": "meestega" }
+            },
+            "naine": {
+              "translation": "woman",
+              "singular": { "nominative": "naine", "genitive": "naise", "partitive": "naist", "illative": "naisesse", "inessive": "naises", "elative": "naisest", "allative": "naisele", "adessive": "naisel", "ablative": "naiselt", "translative": "naiseks", "terminative": "naiseni", "essive": "naisena", "abessive": "naiseta", "comitative": "naisega" },
+              "plural": { "nominative": "naised", "genitive": "naiste", "partitive": "naisi", "illative": "naistesse", "inessive": "naistes", "elative": "naistest", "allative": "naistele", "adessive": "naistel", "ablative": "naistelt", "translative": "naisteks", "terminative": "naisteni", "essive": "naistena", "abessive": "naisteta", "comitative": "naistega" }
+            }
+          }
+        };
+
+        const QUESTS = [
+            { prompt: "Translate: 'The man lives in the house'", subject: "mees", verb: "elama", object: "maja", objectCase: "inessive", pattern: "statement" },
+            { prompt: "Translate: 'I buy a car'", subject: "mina", verb: "ostma", object: "auto", objectCase: "partitive", pattern: "statement" },
+            { prompt: "Translate: 'You do not write a book'", subject: "sina", verb: "kirjutama", object: "raamat", objectCase: "partitive", pattern: "negation" },
+            { prompt: "Translate: 'He lives in the city'", subject: "tema", verb: "elama", object: "linn", objectCase: "inessive", pattern: "statement" },
+            { prompt: "Translate: 'Do you drink water?'", subject: "sina", verb: "jooma", object: "vesi", objectCase: "partitive", pattern: "question" }
+        ];
+
+        const CONNECTORS_LIST = [
+            { text: "ja", translation: "and" },
+            { text: "või", translation: "or" },
+            { text: "aga", translation: "but" },
+            { text: "sest", translation: "because" },
+            { text: "et", translation: "that" },
+            { text: "ja siis", translation: "and then" },
+            { text: ",", translation: "," }
+        ];
+
+        let conjugationDatabase = {};
+        let objectFormsDatabase = {};
+        let wordCatalog = [
+            { id: "sub-mina", type: "subject", text: "Mina", translation: "I", forms: [{text:"Mina", label:"Long"}, {text:"Ma", label:"Short"}]},
+            { id: "sub-sina", type: "subject", text: "Sina", translation: "You", forms: [{text:"Sina", label:"Long"}, {text:"Sa", label:"Short"}]},
+            { id: "sub-tema", type: "subject", text: "Tema", translation: "He/She", forms: [{text:"Tema", label:"Long"}, {text:"Ta", label:"Short"}]}
+        ];
+
+        let state = {
+            currentMode: "explorer", currentPattern: "statement", questIndex: 0, score: 0, streak: 0,
+            slots: { subject: null, verb: null, object: null },
+            connectors: {}, // Map of index (idx) -> connector object { text, translation }
+            activeCategory: "all", openCasePanels: {},
+            libraryWordForms: { "sub-mina": 0, "sub-sina": 0, "sub-tema": 0 }
+        };
+
+        const DOM = {
+            wordPool: document.getElementById("word-pool"), dropzoneGrid: document.getElementById("dropzone-grid"),
+            translationBar: document.getElementById("sentence-translation"), btnClear: document.getElementById("btn-clear"),
+            btnCheck: document.getElementById("btn-check"), modeExplorer: document.getElementById("mode-explorer"),
+            modeQuest: document.getElementById("mode-quest"), questContainer: document.getElementById("quest-container"),
+            questPrompt: document.getElementById("quest-prompt"), statScore: document.getElementById("stat-score"),
+            statStreak: document.getElementById("stat-streak"), siniText: document.getElementById("sini-text"),
+            wordSearch: document.getElementById("word-search"), questSuccessModal: document.getElementById("quest-success-modal"),
+            btnCheat: document.getElementById("btn-cheat"), structureIndicator: document.getElementById("structure-indicator")
+        };
+
+        function pluralize(noun) {
+            if (noun === "child") return "children";
+            if (noun === "man") return "men";
+            if (noun === "woman") return "women";
+            if (noun === "water") return "water";
+            if (noun === "bread") return "bread";
+            if (noun.endsWith("y")) return noun.slice(0, -1) + "ies";
+            return noun + "s";
+        }
+
+        function getCaseEnglishTranslation(noun, isPlural, caseName) {
+            const article = isPlural ? "" : "the ";
+            const articleA = isPlural ? "" : (["a", "e", "i", "o", "u"].includes(noun.charAt(0).toLowerCase()) ? "an " : "a ");
+            const isMass = noun === "water" || noun === "bread";
+            
+            switch (caseName) {
+                case "nominative": 
+                    return isPlural ? noun : (isMass ? noun : `the ${noun}`);
+                case "genitive": 
+                    return isPlural ? `of ${noun}` : `of the ${noun}`;
+                case "partitive": 
+                    return isPlural ? noun : (isMass ? noun : `a ${noun}`);
+                case "illative": 
+                    return `into ${isMass ? "" : article}${noun}`;
+                case "inessive": 
+                    return `in ${isMass ? "" : article}${noun}`;
+                case "elative": 
+                    return `from ${isMass ? "" : article}${noun}`;
+                case "allative": 
+                    return `to ${isMass ? "" : article}${noun}`;
+                case "adessive": 
+                    return `on ${isMass ? "" : article}${noun}`;
+                case "ablative": 
+                    return `from ${isMass ? "" : article}${noun}`;
+                case "translative": 
+                    return `into ${isMass ? "" : articleA}${noun}`;
+                case "terminative": 
+                    return `until ${isMass ? "" : article}${noun}`;
+                case "essive": 
+                    return `as ${isMass ? "" : articleA}${noun}`;
+                case "abessive": 
+                    return `without ${isMass ? "" : articleA}${noun}`;
+                case "comitative": 
+                    return `with ${isMass ? "" : article}${noun}`;
+                default: 
+                    return noun;
+            }
+        }
+
+        async function bootstrapEngine() {
+            let data = ESTONIAN_DATABASE_EMBEDDED;
+            try {
+                const res = await fetch('estonian_data.json');
+                if (res.ok) {
+                    data = await res.json();
+                }
+            } catch (e) {
+                // Local fallback used.
+            }
+
+            conjugationDatabase = data.verbs;
+            const caseNames = ["nominative", "genitive", "partitive", "illative", "inessive", "elative", "allative", "adessive", "ablative", "translative", "terminative", "essive", "abessive", "comitative"];
+            const caseLabels = ["NOM", "GEN", "PAR", "ILL", "INE", "ELA", "ALL", "ADE", "ABL", "TRA", "TER", "ESS", "ABE", "COM"];
+
+            wordCatalog = wordCatalog.filter(w => w.type === "subject");
+
+            Object.entries(data.objects).forEach(([key, val]) => {
+                objectFormsDatabase[key] = [];
+                const baseTrans = val.translation;
+                const pluralTrans = pluralize(baseTrans);
+
+                caseNames.forEach((n, i) => {
+                    objectFormsDatabase[key].push({ 
+                        case: n, 
+                        label: caseLabels[i], 
+                        text: val.singular[n] || key, 
+                        translation: getCaseEnglishTranslation(baseTrans, false, n) 
+                    });
+                });
+                caseNames.forEach((n, i) => {
+                    objectFormsDatabase[key].push({ 
+                        case: "pl_"+n, 
+                        label: caseLabels[i], 
+                        text: val.plural[n] || key+"d", 
+                        translation: getCaseEnglishTranslation(pluralTrans, true, n) 
+                    });
+                });
+                
+                wordCatalog.push({ id: "obj-"+key, type: "object", text: key, translation: val.translation, key: key });
+                if (state.libraryWordForms["obj-"+key] === undefined) {
+                    state.libraryWordForms["obj-"+key] = 0;
+                }
+            });
+
+            Object.entries(conjugationDatabase).forEach(([key, val]) => {
+                wordCatalog.push({ id: "verb-"+key, type: "verb", text: key, translation: val.translation, key: key });
+            });
+
+            updateSini("Vocabulary toolbar loaded. Drag cards down, or tap them to auto-insert.");
+            renderSlots();
+        }
+
+        function initWordPool() {
+            DOM.wordPool.innerHTML = "";
+            const query = DOM.wordSearch.value.toLowerCase();
+            wordCatalog.filter(w => {
+                const matchTab = state.activeCategory === "all" || w.type === state.activeCategory;
+                const matchSearch = w.text.toLowerCase().includes(query) || w.translation.toLowerCase().includes(query);
+                return matchTab && matchSearch;
+            }).forEach(word => {
+                const active = getActiveWord(word);
+                if (Object.values(state.slots).some(s => s && s.id === word.id)) return;
+
+                const card = document.createElement("div");
+                card.className = "bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-2 shrink-0";
+                
+                let chipColor = word.type === "subject" ? "bg-emerald-50 border-emerald-200 text-emerald-800" : word.type === "verb" ? "bg-amber-50 border-amber-200 text-amber-800" : "bg-purple-50 border-purple-200 text-purple-800";
+                
+                const chip = document.createElement("div");
+                chip.className = `word-chip p-2 rounded-lg border font-bold text-sm cursor-grab ${chipColor} flex items-center gap-2`;
+                chip.setAttribute("draggable", "true");
+                
+                chip.ondragstart = (e) => {
+                    e.dataTransfer.setData("text/plain", JSON.stringify({ wordId: word.id }));
+                    chip.classList.add("opacity-40");
+                };
+                chip.ondragend = () => {
+                    chip.classList.remove("opacity-40");
+                };
+
+                chip.innerHTML = `
+                    <span class="text-slate-400 text-xs font-mono select-none">⋮⋮</span>
+                    <div class="flex-grow">
+                        <div class="flex justify-between items-center">
+                            <span>${active.text}</span>
+                            <i class="fas fa-plus opacity-30 text-xs"></i>
+                        </div>
+                        <div class="text-[10px] font-medium opacity-60">${active.translation}</div>
+                    </div>
+                `;
+                
+                chip.onclick = () => { assignToSlot(word, active); };
+                card.appendChild(chip);
+
+                if (word.type === "object") {
+                    const toggle = document.createElement("button");
+                    toggle.className = "text-[9px] font-black uppercase text-slate-400 text-left px-1 hover:text-sky-600 transition-colors mt-1";
+                    const forms = objectFormsDatabase[word.key];
+                    const curIdx = state.libraryWordForms[word.id];
+                    toggle.innerHTML = `Forms: <span class="text-sky-600">${forms[curIdx].label}</span> <i class="fas fa-chevron-down ml-1"></i>`;
+                    toggle.onclick = (e) => { 
+                        e.stopPropagation();
+                        state.openCasePanels[word.id] = !state.openCasePanels[word.id]; 
+                        initWordPool(); 
+                    };
+                    card.appendChild(toggle);
+
+                    if (state.openCasePanels[word.id]) {
+                        const grid = document.createElement("div");
+                        grid.className = "grid grid-cols-1 gap-1 bg-slate-50 p-1.5 rounded-md border border-slate-100 mt-1";
+                        const makeRow = (slice, label) => {
+                            const row = document.createElement("div");
+                            row.className = "grid grid-cols-7 gap-1";
+                            slice.forEach((f, i) => {
+                                const realIdx = slice === forms.slice(0,14) ? i : i + 14;
+                                const b = document.createElement("button");
+                                b.className = `text-[8px] font-bold p-1 rounded transition-colors ${state.libraryWordForms[word.id] === realIdx ? 'bg-sky-600 text-white border-sky-600' : 'bg-white border text-slate-600 hover:bg-slate-100'}`;
+                                b.innerText = f.label;
+                                b.title = f.text;
+                                b.onclick = (e) => { 
+                                    e.stopPropagation();
+                                    state.libraryWordForms[word.id] = realIdx; 
+                                    initWordPool(); 
+                                };
+                                row.appendChild(b);
+                            });
+                            const lbl = document.createElement("div"); lbl.className="text-[7px] font-bold text-slate-400 mt-1"; lbl.innerText = label;
+                            grid.appendChild(lbl); grid.appendChild(row);
+                        }
+                        makeRow(forms.slice(0,14), "SINGULAR");
+                        makeRow(forms.slice(14,28), "PLURAL");
+                        card.appendChild(grid);
+                    }
+                }
+
+                if (word.type === "subject" && word.forms) {
+                    const toggle = document.createElement("button");
+                    toggle.className = "text-[9px] font-black uppercase text-slate-400 text-left px-1 hover:text-emerald-600 transition-colors mt-1";
+                    const curIdx = state.libraryWordForms[word.id];
+                    toggle.innerHTML = `Variant: <span class="text-emerald-600">${word.forms[curIdx].label}</span> <i class="fas fa-chevron-down ml-1"></i>`;
+                    toggle.onclick = (e) => {
+                        e.stopPropagation();
+                        state.libraryWordForms[word.id] = (curIdx + 1) % word.forms.length;
+                        initWordPool();
+                    };
+                    card.appendChild(toggle);
+                }
+
+                DOM.wordPool.appendChild(card);
+            });
+        }
+
+        function assignToSlot(word, active) {
+            if (word.type === "verb") {
+                state.slots.verb = active;
+            } else if (word.type === "subject") {
+                state.slots.subject = active;
+            } else if (word.type === "object") {
+                if (active.case === "nominative" && !state.slots.subject) {
+                    state.slots.subject = active;
+                } else {
+                    state.slots.object = active;
+                }
+            }
+            renderSlots();
+        }
+
+        function getActiveWord(word) {
+            const idx = state.libraryWordForms[word.id] || 0;
+            if (word.type === "object") {
+                const f = objectFormsDatabase[word.key][idx];
+                return { ...word, text: f.text, translation: f.translation, case: f.case };
+            }
+            if (word.type === "subject" && word.forms) {
+                const f = word.forms[idx];
+                return { ...word, text: f.text, translation: f.translation };
+            }
+            return word;
+        }
+
+        function renderSlots() {
+            DOM.dropzoneGrid.innerHTML = "";
+            
+            const isAffirmative = state.currentPattern === "statement";
+            if (isAffirmative) {
+                DOM.structureIndicator.innerText = "Affirmative (SVO)";
+            } else {
+                DOM.structureIndicator.innerText = state.currentPattern === "question" ? "Question (Kas + SVO)" : "Negation (S + ei + VO)";
+            }
+
+            const createParticleBlock = (text, translation, borderBgTextClasses) => {
+                const block = document.createElement("div");
+                block.className = `border-2 border-solid ${borderBgTextClasses} rounded-xl p-3 min-h-[115px] flex flex-col items-center justify-center shadow-sm select-none transition-all w-[130px]`;
+                block.innerHTML = `<div class="font-bold text-sm leading-tight">${text}</div><div class="text-[10px] opacity-75">${translation}</div>`;
+                return block;
+            };
+
+            const renderSlotBlock = (type) => {
+                const word = state.slots[type];
+                const slot = document.createElement("div");
+                
+                slot.ondragover = (e) => {
+                    e.preventDefault();
+                    slot.classList.add("border-sky-500", "bg-sky-50/50");
+                };
+                slot.ondragleave = () => {
+                    slot.classList.remove("border-sky-500", "bg-sky-50/50");
+                };
+                slot.ondrop = (e) => {
+                    e.preventDefault();
+                    slot.classList.remove("border-sky-500", "bg-sky-50/50");
+                    try {
+                        const payload = JSON.parse(e.dataTransfer.getData("text/plain"));
+                        const draggedWord = wordCatalog.find(w => w.id === payload.wordId);
+                        if (draggedWord) {
+                            const active = getActiveWord(draggedWord);
+                            
+                            if (type === "verb" && draggedWord.type === "verb") {
+                                state.slots.verb = active;
+                            } else if (type === "subject" && (draggedWord.type === "subject" || (draggedWord.type === "object" && active.case === "nominative"))) {
+                                state.slots.subject = active;
+                            } else if (type === "object" && draggedWord.type === "object") {
+                                state.slots.object = active;
+                            } else {
+                                updateSini(`You can't assign a ${draggedWord.type} card to the ${type} placeholder.`);
+                                return;
+                            }
+                            renderSlots();
+                        }
+                    } catch (err) {
+                        console.error(err);
+                    }
+                };
+
+                slot.className = "border-2 border-dashed border-slate-200 rounded-xl p-3 min-h-[115px] flex flex-col items-center justify-center bg-white transition-all relative w-[130px]";
+                if (word) {
+                    let display = word.text;
+                    if (type === "verb" && state.slots.subject) {
+                        const vData = conjugationDatabase[word.key];
+                        if (vData) {
+                            if (state.currentPattern === "negation") {
+                                display = vData.neg;
+                            } else {
+                                const subText = state.slots.subject.text.toLowerCase();
+                                if (subText === "mina" || subText === "ma") display = vData.mina;
+                                else if (subText === "sina" || subText === "sa") display = vData.sina;
+                                else display = vData.tema;
+                            }
+                        }
+                    }
+                    slot.className = "border-2 border-solid border-sky-400 rounded-xl p-3 min-h-[115px] flex flex-col items-center justify-center bg-sky-50 relative shadow-sm w-[130px]";
+                    
+                    const textDiv = document.createElement("div");
+                    textDiv.className = "font-bold text-sm text-slate-800 text-center";
+                    textDiv.innerText = display;
+                    slot.appendChild(textDiv);
+
+                    const transDiv = document.createElement("div");
+                    transDiv.className = "text-[10px] opacity-60 text-slate-500 text-center mt-0.5";
+                    transDiv.innerText = word.translation;
+                    slot.appendChild(transDiv);
+
+                    // CASE SELECTOR FOR NOUNS (both in subject and object slot assignments)
+                    if (word.type === "object" && objectFormsDatabase[word.key]) {
+                        const select = document.createElement("select");
+                        select.className = "mt-1.5 text-[10px] bg-white border border-slate-200 rounded px-1 py-0.5 outline-none font-semibold text-sky-700 cursor-pointer hover:border-sky-400 transition-colors max-w-full text-center";
+                        
+                        const forms = objectFormsDatabase[word.key];
+                        forms.forEach((f, idx) => {
+                            const opt = document.createElement("option");
+                            opt.value = idx;
+                            const prefix = idx < 14 ? "Sg" : "Pl";
+                            opt.innerText = `${prefix} - ${f.label} (${f.text})`;
+                            if (idx === (state.libraryWordForms[word.id] || 0)) {
+                                opt.selected = true;
+                            }
+                            select.appendChild(opt);
+                        });
+                        
+                        select.onchange = (e) => {
+                            const newIdx = parseInt(e.target.value, 10);
+                            state.libraryWordForms[word.id] = newIdx;
+                            state.slots[type] = getActiveWord(word);
+                            renderSlots();
+                        };
+                        slot.appendChild(select);
+                    }
+
+                    // VARIANT SELECTOR FOR PRONOUNS
+                    if (word.type === "subject" && word.forms) {
+                        const select = document.createElement("select");
+                        select.className = "mt-1.5 text-[10px] bg-white border border-slate-200 rounded px-1 py-0.5 outline-none font-semibold text-emerald-700 cursor-pointer hover:border-emerald-400 transition-colors max-w-full text-center";
+                        
+                        word.forms.forEach((f, idx) => {
+                            const opt = document.createElement("option");
+                            opt.value = idx;
+                            opt.innerText = f.text;
+                            if (idx === (state.libraryWordForms[word.id] || 0)) {
+                                opt.selected = true;
+                            }
+                            select.appendChild(opt);
+                        });
+                        
+                        select.onchange = (e) => {
+                            const newIdx = parseInt(e.target.value, 10);
+                            state.libraryWordForms[word.id] = newIdx;
+                            state.slots[type] = getActiveWord(word);
+                            renderSlots();
+                        };
+                        slot.appendChild(select);
+                    }
+
+                    const closeBtn = document.createElement("button");
+                    closeBtn.className = "absolute -top-1.5 -right-1.5 bg-rose-500 text-white w-5 h-5 rounded-full text-xs flex items-center justify-center hover:bg-rose-600 transition-colors shadow-sm z-10 font-bold";
+                    closeBtn.innerHTML = "×";
+                    closeBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        state.slots[type] = null;
+                        renderSlots();
+                    };
+                    slot.appendChild(closeBtn);
+                } else {
+                    slot.innerHTML = `<span class="text-slate-300 text-[10px] uppercase font-bold tracking-wider">${type}</span>`;
+                }
+                return slot;
+            };
+
+            const renderConnectorBlock = (index) => {
+                const container = document.createElement("div");
+                container.className = "flex items-center justify-center min-h-[115px] px-1";
+
+                const selected = state.connectors[index];
+                if (selected) {
+                    const chip = document.createElement("div");
+                    chip.className = "bg-amber-50 border border-amber-300 text-amber-800 rounded-xl px-2.5 py-1.5 flex flex-col items-center justify-center min-h-[85px] min-w-[75px] relative shadow-sm text-center select-none";
+                    chip.innerHTML = `
+                        <div class="font-extrabold text-xs leading-none">${selected.text}</div>
+                        <div class="text-[8px] opacity-75 mt-1 leading-none">${selected.translation}</div>
+                    `;
+                    
+                    const closeBtn = document.createElement("button");
+                    closeBtn.className = "absolute -top-1.5 -right-1.5 bg-amber-500 text-white w-4 h-4 rounded-full text-[9px] flex items-center justify-center hover:bg-amber-600 transition-colors shadow-sm font-bold";
+                    closeBtn.innerHTML = "×";
+                    closeBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        delete state.connectors[index];
+                        renderSlots();
+                    };
+                    chip.appendChild(closeBtn);
+                    container.appendChild(chip);
+                } else {
+                    const btn = document.createElement("button");
+                    btn.className = "w-8 h-8 rounded-full border border-dashed border-slate-300 bg-slate-50 text-slate-400 hover:text-[#0072C6] hover:border-[#0072C6] hover:bg-sky-50 flex items-center justify-center transition-all shadow-sm group";
+                    btn.innerHTML = `<i class="fas fa-plus text-xs"></i>`;
+                    
+                    btn.onclick = (e) => {
+                        e.stopPropagation();
+                        
+                        const select = document.createElement("select");
+                        select.className = "text-[10px] bg-white border border-slate-200 rounded px-1.5 py-1 outline-none font-bold text-amber-700 cursor-pointer shadow-sm";
+                        
+                        const defaultOpt = document.createElement("option");
+                        defaultOpt.text = "+ Conjunction";
+                        defaultOpt.value = "";
+                        select.appendChild(defaultOpt);
+
+                        CONNECTORS_LIST.forEach((conn, cIdx) => {
+                            const opt = document.createElement("option");
+                            opt.value = cIdx;
+                            opt.text = `${conn.text} (${conn.translation})`;
+                            select.appendChild(opt);
+                        });
+
+                        select.onchange = () => {
+                            if (select.value !== "") {
+                                state.connectors[index] = CONNECTORS_LIST[parseInt(select.value, 10)];
+                            }
+                            renderSlots();
+                        };
+
+                        select.onblur = () => {
+                            setTimeout(() => renderSlots(), 150);
+                        };
+
+                        container.innerHTML = "";
+                        container.appendChild(select);
+                        select.focus();
+                    };
+                    container.appendChild(btn);
+                }
+                return container;
+            };
+
+            // Assemble syntax layout array sequentially based on structural configuration
+            let items = [];
+            if (state.currentPattern === "question") {
+                items = [
+                    { type: "particle", text: "Kas", translation: "do / are (question)", classes: "border-purple-200 bg-purple-50 text-purple-700" },
+                    { type: "slot", slotName: "subject" },
+                    { type: "slot", slotName: "verb" },
+                    { type: "slot", slotName: "object" }
+                ];
+            } else if (state.currentPattern === "negation") {
+                items = [
+                    { type: "slot", slotName: "subject" },
+                    { type: "particle", text: "ei", translation: "not / don't", classes: "border-rose-200 bg-rose-50 text-rose-700" },
+                    { type: "slot", slotName: "verb" },
+                    { type: "slot", slotName: "object" }
+                ];
+            } else {
+                items = [
+                    { type: "slot", slotName: "subject" },
+                    { type: "slot", slotName: "verb" },
+                    { type: "slot", slotName: "object" }
+                ];
+            }
+
+            // Append elements and intervening conjunction blocks dynamically
+            items.forEach((item, idx) => {
+                if (item.type === "particle") {
+                    DOM.dropzoneGrid.appendChild(createParticleBlock(item.text, item.translation, item.classes));
+                } else {
+                    DOM.dropzoneGrid.appendChild(renderSlotBlock(item.slotName));
+                }
+
+                if (idx < items.length - 1) {
+                    DOM.dropzoneGrid.appendChild(renderConnectorBlock(idx));
+                }
+            });
+
+            updateTranslation();
+            initWordPool();
+        }
+
+        function updateTranslation() {
+            const {subject:s, verb:v, object:o} = state.slots;
+            if (!s && !v && !o) { DOM.translationBar.innerText = "Select words..."; DOM.btnCheck.classList.add("hidden"); return; }
+            
+            let isQuestion = state.currentPattern === "question";
+            let isNegation = state.currentPattern === "negation";
+            
+            let segSubject = "[someone]";
+            if (s) {
+                if (s.id === "sub-mina") segSubject = "I";
+                else if (s.id === "sub-sina") segSubject = "you";
+                else if (s.id === "sub-tema") segSubject = "he";
+                else segSubject = s.translation || s.text;
+            }
+
+            let segVerb = "[does]";
+            if (v) {
+                segVerb = v.translation.replace("to ", "");
+                if (!isNegation && !isQuestion && s && s.id !== "sub-mina" && s.id !== "sub-sina") {
+                    if (segVerb === "be") segVerb = "is";
+                    else if (segVerb === "have") segVerb = "has";
+                    else if (segVerb === "do") segVerb = "does";
+                    else if (segVerb === "go") segVerb = "goes";
+                    else segVerb = segVerb + "s";
+                }
+            }
+
+            let segObject = o ? o.translation : "[something]";
+            let finalRes = [];
+
+            if (isQuestion) {
+                let qParticle = "";
+                if (segVerb === "be" || segVerb === "is") {
+                    qParticle = (s && s.id !== "sub-mina" && s.id !== "sub-sina" ? "Is" : s && s.id === "sub-mina" ? "Am" : "Are");
+                    finalRes.push(qParticle);
+                    if (state.connectors[0]) finalRes.push(state.connectors[0].translation);
+                    finalRes.push(segSubject.toLowerCase());
+                } else {
+                    qParticle = (s && s.id !== "sub-mina" && s.id !== "sub-sina" ? "Does" : "Do");
+                    finalRes.push(qParticle);
+                    if (state.connectors[0]) finalRes.push(state.connectors[0].translation);
+                    finalRes.push(segSubject.toLowerCase());
+                    if (state.connectors[1]) finalRes.push(state.connectors[1].translation);
+                    finalRes.push(segVerb);
+                }
+                
+                if (state.connectors[2]) finalRes.push(state.connectors[2].translation);
+                finalRes.push(segObject);
+
+            } else if (isNegation) {
+                finalRes.push(segSubject);
+                if (state.connectors[0]) finalRes.push(state.connectors[0].translation);
+                
+                let negPart = "";
+                if (segVerb === "be" || segVerb === "is") {
+                    negPart = (s && s.id !== "sub-mina" && s.id !== "sub-sina" ? "is not" : s && s.id === "sub-mina" ? "am not" : "are not");
+                    finalRes.push(negPart);
+                } else {
+                    negPart = (s && s.id !== "sub-mina" && s.id !== "sub-sina" ? "does not" : "do not");
+                    finalRes.push(negPart);
+                    if (state.connectors[1]) finalRes.push(state.connectors[1].translation);
+                    finalRes.push(segVerb);
+                }
+                
+                if (state.connectors[2]) finalRes.push(state.connectors[2].translation);
+                finalRes.push(segObject);
+
+            } else {
+                finalRes.push(segSubject);
+                if (state.connectors[0]) finalRes.push(state.connectors[0].translation);
+                
+                if (segVerb !== "is" && segVerb !== "[does]") {
+                    finalRes.push(segVerb);
+                } else if (segVerb === "is") {
+                    finalRes.push("is");
+                }
+                
+                if (state.connectors[1]) finalRes.push(state.connectors[1].translation);
+                finalRes.push(segObject);
+            }
+
+            finalRes = finalRes.filter(Boolean);
+            if (finalRes.length > 0) {
+                finalRes[0] = finalRes[0].charAt(0).toUpperCase() + finalRes[0].slice(1);
+            }
+
+            let punctuation = isQuestion ? "?" : ".";
+            let sentenceStr = finalRes.join(" ");
+            if (sentenceStr.endsWith(",")) {
+                sentenceStr = sentenceStr.slice(0, -1);
+            }
+            DOM.translationBar.innerText = `"${sentenceStr}${punctuation}"`;
+            
+            if (s && v && o) DOM.btnCheck.classList.remove("hidden");
+            else DOM.btnCheck.classList.add("hidden");
+        }
+
+        function updateSini(m) { DOM.siniText.innerText = m; }
+
+        function initQuest() {
+            const quest = QUESTS[state.questIndex];
+            DOM.questPrompt.innerHTML = `<span class="text-indigo-200 text-xs uppercase font-extrabold tracking-wider block mb-1">Quest ${state.questIndex + 1} of ${QUESTS.length}</span>${quest.prompt}`;
+            updateSini(`Fill structural slots by dragging cards down from the Ribbon.`);
+        }
+
+        function registerControls() {
+            DOM.btnClear.onclick = () => { 
+                state.slots = {subject:null,verb:null,object:null}; 
+                state.connectors = {};
+                renderSlots(); 
+            };
+            
+            DOM.btnCheck.onclick = () => {
+                const s = state.slots.subject;
+                const v = state.slots.verb;
+                const o = state.slots.object;
+
+                if (!s || !v || !o) {
+                    updateSini("Make sure the Subject, Verb, and Object placeholders are populated.");
+                    return;
+                }
+
+                if (state.currentMode === "quest") {
+                    const quest = QUESTS[state.questIndex];
+                    
+                    const sMatch = (quest.subject === "mina" && s.id === "sub-mina") ||
+                                   (quest.subject === "sina" && s.id === "sub-sina") ||
+                                   (quest.subject === "tema" && s.id === "sub-tema") ||
+                                   (s.key === quest.subject);
+                    const vMatch = (v.key === quest.verb);
+                    const oMatch = (o.key === quest.object && o.case === quest.objectCase);
+                    const pMatch = (state.currentPattern === quest.pattern);
+
+                    if (sMatch && vMatch && oMatch && pMatch) {
+                        updateSini("Correct translation!");
+                        state.score += 10;
+                        state.streak += 1;
+                        DOM.statScore.innerText = state.score;
+                        DOM.statStreak.innerText = state.streak;
+                        DOM.questSuccessModal.classList.remove("hidden");
+                    } else {
+                        let hint = [];
+                        if (!sMatch) hint.push("subject");
+                        if (!vMatch) hint.push("verb");
+                        if (!oMatch) {
+                            if (o.key !== quest.object) hint.push("object");
+                            else hint.push(`case form of '${o.key}' (needs ${quest.objectCase.toUpperCase()})`);
+                        }
+                        if (!pMatch) hint.push(`sentence pattern (${quest.pattern})`);
+                        updateSini(`Helpful hint: check the ${hint.join(", ")}.`);
+                        state.streak = 0;
+                        DOM.statStreak.innerText = state.streak;
+                    }
+                } else {
+                    updateSini("The sentence structure matches successfully.");
+                    state.score += 5;
+                    DOM.statScore.innerText = state.score;
+                }
+            };
+
+            document.getElementById("btn-next-quest").onclick = () => {
+                DOM.questSuccessModal.classList.add("hidden");
+                state.questIndex = (state.questIndex + 1) % QUESTS.length;
+                initQuest();
+                state.slots = {subject:null,verb:null,object:null};
+                state.connectors = {};
+                renderSlots();
+            };
+
+            DOM.wordSearch.oninput = () => initWordPool();
+
+            document.querySelectorAll(".tab-btn").forEach(btn => btn.onclick = () => {
+                document.querySelectorAll(".tab-btn").forEach(b => b.className = "tab-btn flex-1 py-1 px-3 rounded-md text-slate-500");
+                btn.className = "tab-btn flex-1 py-1 px-3 rounded-md bg-white shadow-sm text-slate-800";
+                state.activeCategory = btn.getAttribute("data-tab"); 
+                initWordPool();
+            });
+
+            ["statement", "negation", "question"].forEach(p => document.getElementById("pattern-"+p).onclick = () => {
+                state.currentPattern = p; 
+                document.querySelectorAll(".pattern-btn").forEach(b => b.className = "pattern-btn p-2 rounded-lg border text-xs font-bold border-slate-200");
+                document.getElementById("pattern-"+p).className = "pattern-btn p-2 rounded-lg border text-xs font-bold bg-[#0072C6]/10 border-[#0072C6] text-[#0072C6]";
+                renderSlots();
+            });
+
+            DOM.modeExplorer.onclick = () => { 
+                state.currentMode="explorer"; 
+                DOM.modeExplorer.className="flex-1 py-2.5 rounded-lg font-semibold text-sm bg-slate-900 text-white"; 
+                DOM.modeQuest.className="flex-1 py-2.5 rounded-lg font-semibold text-sm text-slate-600"; 
+                DOM.questContainer.classList.add("hidden"); 
+                updateSini("Magic Explorer: Arrange cards to view instant translations.");
+            };
+
+            DOM.modeQuest.onclick = () => { 
+                state.currentMode="quest"; 
+                DOM.modeQuest.className="flex-1 py-2.5 rounded-lg font-semibold text-sm bg-slate-900 text-white"; 
+                DOM.modeExplorer.className="flex-1 py-2.5 rounded-lg font-semibold text-sm text-slate-600"; 
+                DOM.questContainer.classList.remove("hidden"); 
+                initQuest(); 
+            };
+
+            DOM.btnCheat.onclick = () => document.getElementById("cheat-sheet-modal").classList.toggle("hidden");
+            document.getElementById("btn-close-cheat").onclick = () => document.getElementById("cheat-sheet-modal").classList.add("hidden");
+        }
+
+        window.onload = () => {
+            registerControls();
+            bootstrapEngine();
+        };
+    </script>
+</body>
+<!-- FOOTER (Centered and clearly visible copyright) -->
+<footer class="text-center text-xs text-slate-500 font-medium py-4 mt-auto shrink-0 border-t border-slate-100 select-none">
+    &copy; 2026 SõnaSõber. Kõik õigused kaitstud. / All rights reserved.
+</footer>
+</html>
